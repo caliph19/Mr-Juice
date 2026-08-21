@@ -60,7 +60,7 @@ import product32 from '../images/menuitems/iceCream/stawbarry.jpeg';
 import product33 from '../images/menuitems/iceCream/pineappleice.jpeg';
 import product34 from '../images/menuitems/iceCream/carameCrunch.jpeg';
 import product35 from '../images/menuitems/iceCream/almond.jpeg';
-import product36 from '../images/menuitems/iceCream/crunchkulfi.jpeg';
+import product36 from '../images/menuitems/iceCream/almond.jpeg';
 import product37 from '../images/menuitems/iceCream/halfliter.jpeg';
 import product38 from '../images/menuitems/iceCream/oneliter.jpeg';
 // shakes

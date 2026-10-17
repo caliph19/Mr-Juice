@@ -5,7 +5,7 @@ import StoreHoursBanner from "../components/home/StoreHoursBanner.jsx";
 import CategoryMarquee from "../components/home/CategoryMarquee.jsx";
 import WhyUsSection from "../components/home/WhyUsSection.jsx";
 import CtaSection from "../components/home/CtaSection.jsx";
-import FeaturedSection from "../components/Home/FeaturedSection.jsx";
+import FeaturedSection from "../components/home/FeaturedSection.jsx";
 
 export default function Home() {
   return (

@@ -1,6 +1,6 @@
 import React from "react";
 
-import HeroSection from "../components/home/HeroSectionhome.jsx";
+import HeroSection from "../components/home/HeroSectionHome.jsx";
 import StoreHoursBanner from "../components/home/StoreHoursBanner.jsx";
 import CategoryMarquee from "../components/home/CategoryMarquee.jsx";
 import WhyUsSection from "../components/home/WhyUsSection.jsx";

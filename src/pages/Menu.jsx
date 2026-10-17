@@ -12,6 +12,7 @@ import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import Reveal from "../components/Reveal.jsx";
 import SplashLabel from "../components/SplashLabel.jsx";
 import MenuItemCard from "../components/MenuItemCard.jsx";
+import CountUp from "../components/CountUp.jsx";
 import { menu, topItems } from "../data/menu.js";
 import { useApp } from "../context/AppContext.jsx";
 import icecreamimg2 from "../images/heroright1.png";
@@ -23,13 +24,13 @@ import heroSmoothie from "../images/energizers.png";
 
 export default function Menu() {
   const [query, setQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [heroLoaded, setHeroLoaded] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
-  const [isHovering, setIsHovering] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const { selectedOutlet, setOutletModalOpen, addToCart } = useApp();
-  const scrollContainerRef = useRef(null);
   const controls = useAnimation();
+  const categorySliderRef = useRef(null);
 
   // Typing animation states
   const [displayText, setDisplayText] = useState("");
@@ -89,96 +90,38 @@ export default function Menu() {
     setHeroLoaded(true);
   }, []);
 
-  // Auto-scroll categories with infinite loop
-  useEffect(() => {
-    if (!scrollContainerRef.current || isHovering) return;
-
-    const container = scrollContainerRef.current;
-    let animationId;
-
-    const autoScroll = () => {
-      if (!container) return;
-
-      container.scrollLeft += 1.5;
-
-      // Width of ONE complete menu set
-      const oneSetWidth = container.scrollWidth / 3;
-
-      // When we reach the end of the first set,
-      // jump back by exactly one set.
-      if (container.scrollLeft >= oneSetWidth) {
-        container.scrollLeft -= oneSetWidth;
-      }
-
-      animationId = requestAnimationFrame(autoScroll);
-    };
-
-    animationId = requestAnimationFrame(autoScroll);
-
-    return () => {
-      cancelAnimationFrame(animationId);
-    };
-  }, [isHovering]);
-
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return menu;
     return menu
+      .filter(
+        (cat) => selectedCategory === "all" || cat.id === selectedCategory,
+      )
       .map((cat) => ({
         ...cat,
-        items: cat.items.filter(
-          (item) =>
-            item.name.toLowerCase().includes(q) ||
-            (item.desc && item.desc.toLowerCase().includes(q)) ||
-            cat.name.toLowerCase().includes(q),
-        ),
+        items: q
+          ? cat.items.filter(
+              (item) =>
+                item.name.toLowerCase().includes(q) ||
+                (item.desc && item.desc.toLowerCase().includes(q)) ||
+                cat.name.toLowerCase().includes(q),
+            )
+          : cat.items,
       }))
       .filter((cat) => cat.items.length > 0);
-  }, [query]);
-
-  const scrollToCategory = (id) => {
-    const el = document.getElementById(`cat-${id}`);
-    if (el) {
-      const y = el.getBoundingClientRect().top + window.scrollY - 132;
-      window.scrollTo({ top: y, behavior: "smooth" });
-    }
-  };
+  }, [query, selectedCategory]);
 
   const handleAddToCart = (item, categoryName) => {
     addToCart({
       ...item,
       category: categoryName,
       outlet: selectedOutlet,
-    });
+    }, categoryName);
   };
 
   const scrollToContent = () => {
     const el = document.getElementById("menu-content");
     if (el) {
       el.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
-  // Category slider navigation
-  const scrollCategories = (direction) => {
-    if (!scrollContainerRef.current) return;
-
-    const container = scrollContainerRef.current;
-    const scrollAmount = 400;
-    const oneSetWidth = container.scrollWidth / 3;
-
-    if (direction === "right") {
-      container.scrollLeft += scrollAmount;
-
-      if (container.scrollLeft >= oneSetWidth) {
-        container.scrollLeft -= oneSetWidth;
-      }
-    } else {
-      container.scrollLeft -= scrollAmount;
-
-      if (container.scrollLeft <= 0) {
-        container.scrollLeft += oneSetWidth;
-      }
     }
   };
 
@@ -236,6 +179,27 @@ export default function Menu() {
       (prev) => (prev - 1 + heroSlides.length) % heroSlides.length,
     );
   };
+  const scrollCategories = (direction) => {
+    const slider = categorySliderRef.current;
+    if (!slider) return;
+    slider.scrollBy({
+      left: direction * slider.clientWidth * 0.75,
+      behavior: "smooth",
+    });
+  };
+
+  useEffect(() => {
+    const slider = categorySliderRef.current;
+    const activeCategory = slider?.querySelector(`[data-category="${selectedCategory}"]`);
+    if (!slider || !activeCategory) return;
+
+    const targetLeft =
+      activeCategory.getBoundingClientRect().left -
+      slider.getBoundingClientRect().left +
+      slider.scrollLeft -
+      (slider.clientWidth - activeCategory.clientWidth) / 2;
+    slider.scrollTo({ left: targetLeft, behavior: "smooth" });
+  }, [selectedCategory]);
 
   return (
     <div>
@@ -381,7 +345,7 @@ export default function Menu() {
               >
                 {heroSlides[currentSlide].title}
 
-                <span className="mt-3 block text-red-600">
+                <span className="mt-3 block text-yellow-400">
                   {heroSlides[currentSlide].highlight}
                 </span>
               </motion.h1>
@@ -608,15 +572,20 @@ export default function Menu() {
                 {/* Number */}
 
                 <div className="ml-1 flex items-center gap-2">
-                  <span className="font-display text-xl font-black text-red-600">
-                    {String(currentSlide + 1).padStart(2, "0")}
-                  </span>
+                  <CountUp
+                    key={currentSlide}
+                    value={currentSlide + 1}
+                    pad={2}
+                    className="font-display text-xl font-black text-red-600"
+                  />
 
                   <span className="text-sm text-juice-ink/30">/</span>
 
-                  <span className="text-sm font-semibold text-juice-ink/40">
-                    {String(heroSlides.length).padStart(2, "0")}
-                  </span>
+                  <CountUp
+                    value={heroSlides.length}
+                    pad={2}
+                    className="text-sm font-semibold text-juice-ink/40"
+                  />
                 </div>
               </motion.div>
             </div>
@@ -1097,8 +1066,7 @@ export default function Menu() {
                 Explore Our Menu
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-juice-ink/60">
-                Tap "Add" to build an order, or "Order" to send a single item
-                straight to WhatsApp.
+                Add items to your cart, then provide your delivery details at checkout.
               </p>
             </Reveal>
 
@@ -1156,66 +1124,105 @@ export default function Menu() {
         </section>
       </div>
 
-      {/* Category Slider with Infinite Auto-scroll */}
-      {!query && (
-        <div className="sticky top-[60px] z-30 border-y border-amber-200/30 bg-white/95 py-4 backdrop-blur-md sm:top-[68px]">
-          <div className="container-brand relative flex items-center">
-            {/* Left Navigation Button */}
-            <button
-              onClick={() => scrollCategories("left")}
-              className="absolute left-0 z-10 hidden rounded-full bg-white p-2 shadow-lg transition hover:bg-amber-50 sm:block"
-              aria-label="Scroll categories left"
-              onMouseEnter={() => setIsHovering(true)}
-              onMouseLeave={() => setIsHovering(false)}
-            >
-              <ChevronLeft size={20} className="text-juice-ink" />
-            </button>
-
-            {/* Categories Container - Infinite loop with duplicate items */}
-            <div
-              ref={scrollContainerRef}
-              className="scrollbar-none flex gap-6 overflow-x-hidden px-8 pb-1" // Changed gap-4 to gap-6
-              onMouseEnter={() => setIsHovering(true)}
-              onMouseLeave={() => setIsHovering(false)}
-              style={{ scrollBehavior: "smooth" }}
-            >
-              {/* Duplicate menu items for seamless looping */}
-              {[...menu, ...menu, ...menu].map((cat, index) => (
-                <button
-                  key={`${cat.id}-${index}`}
-                  onClick={() => scrollToCategory(cat.id)}
-                  className="flex shrink-0 flex-col items-center gap-2 rounded-2xl bg-white px-6 py-3 transition hover:scale-[1.02]" // Reduced from 1.05 to 1.02
-                >
-                  <img
-                    src={cat.image}
-                    alt={cat.name}
-                    className="h-[120px] w-[90px]  object-contain" // Changed to 60px x 60px with rounded
-                  />
-                  <span className="font-display text-base font-semibold text-juice-ink">
-                    {" "}
-                    {/* Changed text-sm to text-base */}
-                    {cat.name}
-                  </span>
-                </button>
-              ))}
+      {/* Category filter */}
+      <div className="sticky top-[60px] z-30 border-y border-amber-200/50 bg-gradient-to-r from-[#fffaf0]/95 via-white/95 to-[#fff7e6]/95 py-4 shadow-[0_12px_30px_-24px_rgba(43,18,16,0.55)] backdrop-blur-xl sm:top-[68px]">
+        <div className="container-brand">
+          <div className="mb-3 flex items-end justify-between gap-3 px-1">
+            <div>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.24em] text-amber-700">
+                Find your favorite
+              </p>
+              <h2 className="mt-0.5 font-display text-lg font-extrabold text-juice-ink sm:text-xl">
+                Browse by category
+              </h2>
             </div>
+            <span className="pb-0.5 text-xs font-medium text-juice-ink/45">
+              {selectedCategory === "all" ? (
+                <>
+                  <CountUp value={menu.length} /> categories
+                </>
+              ) : (
+                menu.find((cat) => cat.id === selectedCategory)?.name
+              )}
+            </span>
+          </div>
 
-            {/* Right Navigation Button */}
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => scrollCategories("right")}
-              className="absolute right-0 z-10 hidden rounded-full bg-white p-2 shadow-lg transition hover:bg-amber-50 sm:block"
-              aria-label="Scroll categories right"
-              onMouseEnter={() => setIsHovering(true)}
-              onMouseLeave={() => setIsHovering(false)}
+              type="button"
+              onClick={() => scrollCategories(-1)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-900/10 bg-white text-juice-ink shadow-sm transition hover:border-juice-red/30 hover:bg-juice-red hover:text-white"
+              aria-label="Scroll categories left"
             >
-              <ChevronRight size={20} className="text-juice-ink" />
+              <ChevronLeft size={18} />
+            </button>
+            <div
+              ref={categorySliderRef}
+              aria-label="Filter menu by category"
+              className="category-slider-track flex min-w-0 flex-1 gap-2 overflow-x-auto rounded-2xl border border-white/80 bg-white/55 p-2 shadow-inner shadow-amber-900/[0.03]"
+            >
+            <button
+              type="button"
+              onClick={() => setSelectedCategory("all")}
+              data-category="all"
+              aria-pressed={selectedCategory === "all"}
+              className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all duration-200 ${
+                selectedCategory === "all"
+                  ? "bg-juice-ink text-white shadow-lg shadow-juice-ink/20 ring-1 ring-amber-300/70"
+                  : "border border-amber-900/5 bg-white/80 text-juice-ink/70 hover:-translate-y-0.5 hover:border-amber-300 hover:bg-white hover:text-juice-ink hover:shadow-md"
+              }`}
+            >
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-400/20 text-base">
+                ✨
+              </span>
+              All Menu
+            </button>
+            {menu.map((cat) => {
+              const active = selectedCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat.id)}
+                  data-category={cat.id}
+                  aria-pressed={active}
+                  className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                    active
+                      ? "bg-juice-ink text-white shadow-lg shadow-juice-ink/20 ring-1 ring-amber-300/70"
+                      : "border border-amber-900/5 bg-white/80 text-juice-ink/70 hover:-translate-y-0.5 hover:border-amber-300 hover:bg-white hover:text-juice-ink hover:shadow-md"
+                  }`}
+                >
+                  <span
+                    className={`flex h-7 w-7 items-center justify-center rounded-lg text-base ${
+                      active ? "bg-amber-400/20" : "bg-amber-50"
+                    }`}
+                  >
+                    {cat.icon}
+                  </span>
+                  {cat.name}
+                </button>
+              );
+            })}
+            </div>
+            <button
+              type="button"
+              onClick={() => scrollCategories(1)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-900/10 bg-white text-juice-ink shadow-sm transition hover:border-juice-red/30 hover:bg-juice-red hover:text-white"
+              aria-label="Scroll categories right"
+            >
+              <ChevronRight size={18} />
             </button>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Menu Items Grid */}
-      <div className="container-brand  bg-white py-20 ">
+      <section className="relative isolate overflow-hidden bg-transparent py-20">
+        <div className="pointer-events-none absolute -left-24 top-16 h-80 w-80 rounded-full bg-rose-300/35 blur-[90px]" />
+        <div className="pointer-events-none absolute right-[8%] top-[28%] h-96 w-96 rounded-full bg-amber-300/30 blur-[100px]" />
+        <div className="pointer-events-none absolute -bottom-20 left-[38%] h-80 w-80 rounded-full bg-violet-300/25 blur-[95px]" />
+        <div className="pointer-events-none absolute bottom-[12%] right-[-5%] h-72 w-72 rounded-full bg-emerald-300/25 blur-[90px]" />
+      <div className="container-brand relative z-10">
         {filtered.length === 0 && (
           <p className="py-20 text-center text-juice-ink/50">
             No items match "{query}". Try another search.
@@ -1252,10 +1259,18 @@ export default function Menu() {
                 {cat.items.map((item, i) => (
                   <div
                     key={item.name}
-                    className="group  flex  overflow-hidden "
+                    className={`group flex min-w-0 items-center gap-3 overflow-hidden rounded-3xl border p-3 shadow-[0_14px_35px_rgba(59,32,45,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(59,32,45,0.2)] ${
+                      [
+                        "border-rose-200/80 bg-gradient-to-br from-rose-50 via-white to-orange-50",
+                        "border-amber-200/80 bg-gradient-to-br from-amber-50 via-white to-yellow-50",
+                        "border-violet-200/80 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50",
+                        "border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-teal-50",
+                        "border-sky-200/80 bg-gradient-to-br from-sky-50 via-white to-indigo-50",
+                      ][i % 5]
+                    }`}
                   >
                     {/* Image Container with Add Button */}
-                    <div className="relative aspect-square p-2 w-40 overflow-hidden  bg-transparent">
+                    <div className="relative h-36 w-36 shrink-0 overflow-hidden rounded-2xl bg-white/70 p-2 shadow-inner">
                       <img
                         src={item.itemimg}
                         alt={item.name}
@@ -1264,7 +1279,7 @@ export default function Menu() {
                     </div>
 
                     {/* Item Details with Red theme */}
-                    <div className=" space-y-2 p-2 w-52 gap-2 flex-col ">
+                    <div className="min-w-0 flex-1 space-y-2 p-2">
                       <h3 className="font-['Poppins','Poppins_Fallback'] text-base font-semibold text-juice-ink transition-colors ">
                         {item.name}
                       </h3>
@@ -1272,16 +1287,17 @@ export default function Menu() {
                         {item.desc}
                       </p>
                       {/* Price with Poppins and different weight */}
-                      <p className="flex w-fit items-center rounded-lg  px-3 py-1 text-xs font-semibold text-black shadow-lg  font-['Poppins','Poppins_Fallback'] tracking-wide">
+                      <p className="flex w-fit items-center rounded-lg bg-white/75 px-3 py-1 text-xs font-semibold text-juice-red shadow-sm font-['Poppins','Poppins_Fallback'] tracking-wide">
                         from Rs. {item.price}
                       </p>
-                      <p
+                      <button
+                        type="button"
                         onClick={() => handleAddToCart(item, cat.name)}
                         aria-label={`Add ${item.name} to cart`}
-                        className="flex w-fit items-center rounded-lg duration-500 group-hover:scale-110 hover:cursor-pointer hover:bg-red-700 hover:shadow-xl  bg-red-600 px-3 py-1 text-md font-extrabold text-white shadow-lg shadow-red-600/30 font-['Poppins','Poppins_Fallback'] tracking-wide"
+                        className="flex w-fit items-center rounded-lg bg-red-600 px-3 py-1 text-sm font-extrabold text-white shadow-lg shadow-red-600/30 transition duration-300 hover:scale-105 hover:bg-red-700 hover:shadow-xl font-['Poppins','Poppins_Fallback'] tracking-wide"
                       >
                         Add to Cart
-                      </p>
+                      </button>
 
                       {/* <motion.button
                         onClick={() => handleAddToCart(item, cat.name)}
@@ -1300,6 +1316,7 @@ export default function Menu() {
           ))}
         </div>
       </div>
+      </section>
     </div>
   );
 }

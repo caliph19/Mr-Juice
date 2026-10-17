@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { outlets } from "../data/outlets.js";
 
 const AppContext = createContext(null);
 
 const OUTLET_KEY = "mrjuice_outlet";
 const CART_KEY = "mrjuice_cart";
+const DELIVERY_FEE = 100;
 
 function readStorage(key, fallback) {
   try {
@@ -20,7 +21,6 @@ export function AppProvider({ children }) {
   const [cart, setCart] = useState(() => readStorage(CART_KEY, []));
   const [isOutletModalOpen, setOutletModalOpen] = useState(false);
   const [isCartOpen, setCartOpen] = useState(false);
-  const pendingActionRef = useRef(null);
 
   useEffect(() => {
     try {
@@ -43,25 +43,9 @@ export function AppProvider({ children }) {
     [selectedOutletId]
   );
 
-  // Kept alongside state so callbacks queued before an outlet is chosen
-  // (see requireOutlet/chooseOutlet) always read the outlet picked, not a
-  // stale closure from before the pick.
-  const selectedOutletRef = useRef(selectedOutlet);
-  useEffect(() => {
-    selectedOutletRef.current = selectedOutlet;
-  }, [selectedOutlet]);
-
   const chooseOutlet = useCallback((id) => {
     setSelectedOutletId(id);
     setOutletModalOpen(false);
-    selectedOutletRef.current = outlets.find((o) => o.id === id) || null;
-    // Resume whatever action (single order / cart checkout) opened the
-    // outlet picker in the first place. Called synchronously (not via
-    // setTimeout) so window.open still counts as a direct result of the
-    // user's click and isn't blocked as a popup.
-    const pending = pendingActionRef.current;
-    pendingActionRef.current = null;
-    if (pending) pending();
   }, []);
 
   const addToCart = useCallback((item, categoryName) => {
@@ -108,55 +92,32 @@ export function AppProvider({ children }) {
   );
   const cartCount = useMemo(() => cart.reduce((sum, line) => sum + line.qty, 0), [cart]);
 
-  const requireOutlet = useCallback(
-    (after) => {
-      if (selectedOutlet) {
-        after?.();
-      } else {
-        pendingActionRef.current = after || null;
-        setOutletModalOpen(true);
-      }
-    },
-    [selectedOutlet]
-  );
+  const sendCartOrder = useCallback((customer) => {
+    if (cart.length === 0) return;
 
-  const buildWhatsAppUrl = useCallback(
-    ({ singleItem } = {}) => {
-      const outlet = selectedOutletRef.current || outlets[0];
-      const lines = singleItem ? [{ ...singleItem, qty: 1 }] : cart;
-      const itemLines = lines
-        .map((l) => `• ${l.name}${l.qty > 1 ? ` x${l.qty}` : ""} — Rs. ${l.price * l.qty}`)
-        .join("\n");
-      const total = lines.reduce((sum, l) => sum + l.price * l.qty, 0);
-      const message =
-        `Hi Mr. Juice! 🧃 I'd like to order from your *${outlet.name}* outlet:\n\n` +
-        `${itemLines}\n\n` +
-        `Total: Rs. ${total}\n\n` +
-        `Please confirm availability. Thank you!`;
-      return `https://wa.me/${outlet.whatsapp}?text=${encodeURIComponent(message)}`;
-    },
-    [cart]
-  );
-
-  const orderSingleItem = useCallback(
-    (item, categoryName) => {
-      requireOutlet(() => {
-        const url = buildWhatsAppUrl({
-          singleItem: { name: item.name, price: item.price, category: categoryName }
-        });
-        window.open(url, "_blank", "noopener,noreferrer");
-      });
-    },
-    [requireOutlet, buildWhatsAppUrl]
-  );
-
-  const sendCartOrder = useCallback(() => {
-    requireOutlet(() => {
-      if (cart.length === 0) return;
-      const url = buildWhatsAppUrl();
-      window.open(url, "_blank", "noopener,noreferrer");
-    });
-  }, [requireOutlet, buildWhatsAppUrl, cart.length]);
+    const outlet = selectedOutlet || outlets[0];
+    const itemLines = cart
+      .map((line) =>
+        `----------------------------\n${line.name}${line.qty > 1 ? ` x${line.qty}` : ""}\nPrice: Rs. ${line.price * line.qty}`
+      )
+      .join("\n");
+    const specialInstruction = customer.specialInstruction.trim();
+    const message =
+      `NEW FOOD MOOD ORDER\n\n` +
+      `Customer: ${customer.name.trim()}\n\n` +
+      `Phone: ${customer.phone.trim()}\n\n` +
+      `Address: ${customer.address.trim()}\n\n` +
+      (specialInstruction
+        ? `Special Instruction: ${specialInstruction}\n\n`
+        : "") +
+      `${itemLines}\n\n` +
+      `Subtotal: Rs. ${cartTotal}\n` +
+      `Delivery: Rs. ${DELIVERY_FEE}\n` +
+      `Total: Rs. ${cartTotal + DELIVERY_FEE}\n\n` +
+      `Please confirm my order.`;
+    const url = `https://wa.me/${outlet.whatsapp}?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }, [cart, cartTotal, selectedOutlet]);
 
   const value = {
     outlets,
@@ -164,7 +125,6 @@ export function AppProvider({ children }) {
     chooseOutlet,
     isOutletModalOpen,
     setOutletModalOpen,
-    requireOutlet,
     cart,
     addToCart,
     updateQty,
@@ -172,9 +132,9 @@ export function AppProvider({ children }) {
     clearCart,
     cartTotal,
     cartCount,
+    deliveryFee: DELIVERY_FEE,
     isCartOpen,
     setCartOpen,
-    orderSingleItem,
     sendCartOrder
   };
 

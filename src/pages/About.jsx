@@ -15,8 +15,10 @@ import SplashLabel from "../components/SplashLabel.jsx";
 import { outlets } from "../data/outlets.js";
 import { menuStats } from "../data/menu.js";
 import { useApp } from "../context/AppContext.jsx";
+import CountUp from "../components/CountUp.jsx";
 
 import icecreamimg2 from "../images/heroright1.png";
+import ImageSlider from "../components/ImageSlider.jsx";
 
 // NOTE: swap the paragraph below for your real founding story, year, and any
 // awards/press once you have exact copy — placeholders were avoided in favor
@@ -50,7 +52,13 @@ const VALUES = [
   },
 ];
 
+
+
 export default function About() {
+
+
+
+
   const [heroLoaded, setHeroLoaded] = useState(false);
 
   const { selectedOutlet, setOutletModalOpen } = useApp();
@@ -416,11 +424,11 @@ export default function About() {
           <div className="relative mx-auto grid max-w-sm grid-cols-2 gap-4">
 
             {[
-              [`${menuStats.items}+`, "Menu items"],
-              [`${menuStats.categories}`, "Categories"],
-              [`${outlets.length}`, "Outlets"],
-              ["1", "Tap-to-order chat"],
-            ].map(([num, label]) => (
+              [menuStats.items, "Menu items", "+"],
+              [menuStats.categories, "Categories"],
+              [outlets.length, "Outlets"],
+              [1, "Tap-to-order chat"],
+            ].map(([num, label, suffix = ""]) => (
 
               <motion.div
                 key={label}
@@ -435,7 +443,7 @@ export default function About() {
               >
 
                 <span className="font-display text-3xl font-extrabold text-juice-red">
-                  {num}
+                  <CountUp value={num} suffix={suffix} />
                 </span>
 
                 <span className="text-xs font-medium uppercase tracking-wide text-juice-ink/50">
@@ -499,7 +507,7 @@ export default function About() {
                     }}
                   >
 
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-juice-leaf/15 text-juice-leaf-dark">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-juice-red/15 text-red-400">
                       <Icon size={20} />
                     </div>
 
@@ -541,7 +549,7 @@ export default function About() {
           </p>
 
           <h2 className="mt-1 font-display text-3xl font-extrabold text-juice-ink sm:text-4xl">
-            Six outlets, one great blend
+            Four outlets, one great blend
           </h2>
 
           <p className="mt-3 text-juice-ink/60">
@@ -573,7 +581,7 @@ export default function About() {
               >
 
                 <span className="font-display text-xs font-bold uppercase tracking-wider text-juice-red">
-                  Outlet {String(i + 1).padStart(2, "0")}
+                  Outlet <CountUp value={i + 1} pad={2} />
                 </span>
 
                 <h3 className="mt-1 font-display text-lg font-extrabold text-juice-ink">

@@ -1,10 +1,10 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Plus, MessageCircle } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useApp } from "../context/AppContext.jsx";
 
 export default function MenuItemCard({ item, categoryName, categoryImage, index = 0 }) {
-  const { addToCart, orderSingleItem } = useApp();
+  const { addToCart } = useApp();
 
   return (
     <motion.div
@@ -48,12 +48,6 @@ export default function MenuItemCard({ item, categoryName, categoryImage, index 
           className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-juice-red/5 px-3 py-2 font-display text-xs font-semibold text-juice-ink transition hover:bg-juice-red hover:text-white"
         >
           <Plus size={14} /> Add
-        </button>
-        <button
-          onClick={() => orderSingleItem(item, categoryName)}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-juice-leaf px-3 py-2 font-display text-xs font-semibold text-cream transition hover:bg-juice-leaf-dark"
-        >
-          <MessageCircle size={14} /> Order
         </button>
       </div>
     </motion.div>

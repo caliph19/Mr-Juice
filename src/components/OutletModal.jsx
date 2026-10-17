@@ -10,7 +10,7 @@ export default function OutletModal() {
     <AnimatePresence>
       {isOutletModalOpen && (
         <motion.div
-          className="fixed inset-0 z-[60] flex items-end justify-center bg-juice-ink/60 backdrop-blur-sm sm:items-center"
+          className="fixed inset-0 z-[80] flex items-end justify-center bg-black/80 backdrop-blur-sm sm:items-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -22,18 +22,20 @@ export default function OutletModal() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 40, opacity: 0 }}
             transition={{ type: "spring", damping: 26, stiffness: 300 }}
-            className="w-full max-w-lg rounded-t-3xl bg-cream p-6 shadow-2xl sm:rounded-3xl sm:p-8"
+            className="w-[90%] max-w-lg rounded-t-3xl border border-red-500/30 bg-[#171717] p-6 text-white shadow-[0_24px_80px_rgba(0,0,0,0.65)] sm:rounded-3xl sm:p-8"
           >
             <div className="flex items-start justify-between">
               <div>
-                <p className="eyebrow">Where should we send it?</p>
-                <h3 className="font-display text-2xl font-extrabold text-juice-ink">
+                <p className="font-display text-xs font-bold uppercase tracking-[0.2em] text-red-400">
+                  Where should we send it?
+                </p>
+                <h3 className="font-display text-2xl font-extrabold text-white">
                   Choose your outlet
                 </h3>
               </div>
               <button
                 onClick={() => setOutletModalOpen(false)}
-                className="rounded-full bg-juice-ink/5 p-2 text-juice-ink hover:bg-juice-ink/10"
+                className="rounded-full bg-white/10 p-2 text-white transition hover:bg-red-600"
                 aria-label="Close"
               >
                 <X size={18} />
@@ -49,20 +51,20 @@ export default function OutletModal() {
                     onClick={() => chooseOutlet(o.id)}
                     className={`flex items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all ${
                       active
-                        ? "border-juice-red bg-juice-red/5"
-                        : "border-juice-ink/10 hover:border-juice-mango hover:bg-juice-mango/10"
+                        ? "border-red-500 bg-red-500/10"
+                        : "border-white/10 hover:border-red-500/70 hover:bg-red-500/5"
                     }`}
                   >
                     <span
                       className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                        active ? "bg-juice-red text-cream" : "bg-juice-ink/5 text-juice-ink"
+                        active ? "bg-red-600 text-white" : "bg-white/10 text-red-300"
                       }`}
                     >
                       {active ? <Check size={16} /> : <MapPin size={16} />}
                     </span>
                     <span>
-                      <span className="block font-display font-bold text-juice-ink">{o.name}</span>
-                      <span className="block text-sm text-juice-ink/60">{o.address}</span>
+                      <span className="block font-display font-bold text-white">{o.name}</span>
+                      <span className="block text-sm text-white/60">{o.address}</span>
                     </span>
                   </button>
                 );

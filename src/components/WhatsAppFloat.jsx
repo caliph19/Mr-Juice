@@ -1,3 +1,5 @@
+// src/components/WhatsAppFloat.jsx
+
 import React from "react";
 import { MessageCircle } from "lucide-react";
 import { social } from "../data/outlets.js";
